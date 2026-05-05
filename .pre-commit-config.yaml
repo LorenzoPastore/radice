@@ -1,0 +1,44 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: no-commit-to-branch
+        args: ['--branch', 'main']
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.7
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^backend/
+      - id: ruff-format
+        files: ^backend/
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        files: ^backend/apps/
+        additional_dependencies: [django-stubs, djangorestframework-stubs]
+        args: [--ignore-missing-imports]
+
+  - repo: local
+    hooks:
+      - id: biome
+        name: Biome lint+format
+        language: system
+        entry: bash -c 'cd frontend && pnpm biome check --write .'
+        files: ^frontend/.*\.(ts|tsx|js|jsx|json)$
+        pass_filenames: false
+
+      - id: commitlint
+        name: Conventional Commits lint
+        language: system
+        entry: bash -c 'echo "${1}" | npx --yes commitlint'
+        stages: [commit-msg]
+        pass_filenames: false
