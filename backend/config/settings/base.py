@@ -238,8 +238,9 @@ CORS_ALLOW_CREDENTIALS = True
 # Email
 # ---------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "noreply@radice.app"
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@radice.local")
 SERVER_EMAIL = "noreply@radice.app"
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
 
 # ---------------------------------------------------------------------------
 # Logging

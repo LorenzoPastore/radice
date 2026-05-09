@@ -28,6 +28,8 @@ INSTALLED_APPS = INSTALLED_APPS + [
 # Email — print to console
 # ---------------------------------------------------------------------------
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@radice.local"
+FRONTEND_URL = "http://localhost:3000"
 
 # ---------------------------------------------------------------------------
 # CORS — allow everything locally

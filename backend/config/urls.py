@@ -11,6 +11,9 @@ urlpatterns = [
     # Health check (from core app)
     path("api/", include("apps.core.urls")),
 
+    # Identity (auth, registration, email verification)
+    path("api/", include("apps.identity.urls")),
+
     # OpenAPI schema + Swagger UI
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

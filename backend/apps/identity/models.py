@@ -74,6 +74,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     email_verified_at = models.DateTimeField(null=True, blank=True)
+    email_verification_token = models.CharField(
+        max_length=128, null=True, blank=True, unique=True
+    )
+    email_verification_sent_at = models.DateTimeField(null=True, blank=True)
     # `password` field is provided by AbstractBaseUser
     oauth_providers = models.JSONField(default=list, blank=True)
     person = models.OneToOneField(
