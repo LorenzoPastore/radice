@@ -63,6 +63,7 @@ THIRD_PARTY_APPS = [
     "allauth.account",
     "allauth.socialaccount",
     "corsheaders",
+    "django_celery_beat",
 ]
 
 RADICE_APPS = [
@@ -135,9 +136,6 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django.core.cache.backends.redis.RedisCache",
-        },
         "KEY_PREFIX": "radice",
         "TIMEOUT": 300,
     }
