@@ -13,4 +13,16 @@ urlpatterns = [
         views.resend_verification_view,
         name="resend-verification",
     ),
+    path("auth/login/", views.login_view, name="login"),
+    path("auth/logout/", views.logout_view, name="logout"),
+    path(
+        "auth/password-reset/request/",
+        views.password_reset_request_view,
+        name="password-reset-request",
+    ),
+    path(
+        "auth/password-reset/confirm/",
+        views.password_reset_confirm_view,
+        name="password-reset-confirm",
+    ),
 ]

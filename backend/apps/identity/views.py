@@ -9,14 +9,23 @@ from rest_framework.response import Response
 
 from .serializers import (
     EmailVerificationSerializer,
+    LoginSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     PersonPublicSerializer,
     RegistrationSerializer,
     UserPublicSerializer,
 )
+from .services.auth_service import AuthError, login_user, logout_user
 from .services.email_verification_service import (
     VerificationError,
     send_verification_email,
     verify_email,
+)
+from .services.password_reset_service import (
+    PasswordResetError,
+    confirm_password_reset,
+    request_password_reset,
 )
 from .services.registration_service import RegistrationError, register_new_user
 
@@ -91,3 +100,70 @@ def resend_verification_view(request: Request) -> Response:
         )
     send_verification_email(user)
     return Response({"detail": "Email di verifica inviata."})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def login_view(request: Request) -> Response:
+    """POST /api/auth/login/ — Authenticate and obtain a token."""
+    serializer = LoginSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        user, token = login_user(
+            email=serializer.validated_data["email"],
+            password=serializer.validated_data["password"],
+        )
+    except AuthError as e:
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    return Response(
+        {
+            "token": token,
+            "user": UserPublicSerializer(user).data,
+            "email_verified": user.email_verified_at is not None,
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout_view(request: Request) -> Response:
+    """POST /api/auth/logout/ — Revoke current token."""
+    logout_user(user=request.user)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_request_view(request: Request) -> Response:
+    """POST /api/auth/password-reset/request/ — Send reset email."""
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    request_password_reset(email=serializer.validated_data["email"])
+    # Always return 200 — never leak whether email is registered
+    return Response(
+        {"detail": "Se l'email è registrata, riceverai un link di reset."}
+    )
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm_view(request: Request) -> Response:
+    """POST /api/auth/password-reset/confirm/ — Set new password using token."""
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    try:
+        confirm_password_reset(
+            token=serializer.validated_data["token"],
+            new_password=serializer.validated_data["new_password"],
+        )
+    except PasswordResetError as e:
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response({"detail": "Password aggiornata. Effettua il login."})
