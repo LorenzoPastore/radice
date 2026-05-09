@@ -25,4 +25,11 @@ urlpatterns = [
         views.password_reset_confirm_view,
         name="password-reset-confirm",
     ),
+    path("me/", views.me_view, name="me"),
+    path("me/person/", views.me_person_view, name="me-person"),
+    path(
+        "me/change-password/",
+        views.change_password_view,
+        name="change-password",
+    ),
 ]

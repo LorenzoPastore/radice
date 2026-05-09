@@ -8,8 +8,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from .serializers import (
+    ChangePasswordSerializer,
     EmailVerificationSerializer,
     LoginSerializer,
+    MePersonSerializer,
+    MePersonUpdateSerializer,
+    MeUserSerializer,
+    MeUserUpdateSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     PersonPublicSerializer,
@@ -17,6 +22,11 @@ from .serializers import (
     UserPublicSerializer,
 )
 from .services.auth_service import AuthError, login_user, logout_user
+from .services.me_service import (
+    change_password,
+    update_me_person,
+    update_me_user,
+)
 from .services.email_verification_service import (
     VerificationError,
     send_verification_email,
@@ -167,3 +177,87 @@ def password_reset_confirm_view(request: Request) -> Response:
         )
 
     return Response({"detail": "Password aggiornata. Effettua il login."})
+
+
+# ---------------------------------------------------------------------------
+# /api/me/ — current user's own data
+# ---------------------------------------------------------------------------
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def me_view(request: Request) -> Response:
+    """GET/PATCH /api/me/ — Current user (User-level fields).
+
+    GET returns the current User and its associated Person.
+    PATCH updates whitelisted User-level fields only.
+    """
+    if request.method == "GET":
+        person = request.user.person
+        return Response(
+            {
+                "user": MeUserSerializer(request.user).data,
+                "person": MePersonSerializer(person).data if person else None,
+            }
+        )
+
+    # PATCH
+    serializer = MeUserUpdateSerializer(data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    user = update_me_user(user=request.user, changes=serializer.validated_data)
+    person = user.person
+    return Response(
+        {
+            "user": MeUserSerializer(user).data,
+            "person": MePersonSerializer(person).data if person else None,
+        }
+    )
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def me_person_view(request: Request) -> Response:
+    """PATCH /api/me/person/ — Edit own Person fields."""
+    if request.user.person is None:
+        return Response(
+            {"detail": "Profilo Person non disponibile"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    serializer = MePersonUpdateSerializer(data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    person = update_me_person(
+        user=request.user, changes=serializer.validated_data
+    )
+    return Response(MePersonSerializer(person).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def change_password_view(request: Request) -> Response:
+    """POST /api/me/change-password/ — Change own password.
+
+    Requires the current password. Revokes all OTHER auth tokens but
+    preserves the current session's token so the user remains logged in.
+    """
+    serializer = ChangePasswordSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    # Preserve the current session token (request.auth is the Token instance
+    # under TokenAuthentication).
+    current_token_key = None
+    auth = request.auth
+    if auth is not None and hasattr(auth, "key"):
+        current_token_key = auth.key
+
+    try:
+        change_password(
+            user=request.user,
+            current_password=serializer.validated_data["current_password"],
+            new_password=serializer.validated_data["new_password"],
+            current_token_key=current_token_key,
+        )
+    except ValueError as e:
+        return Response(
+            {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    return Response({"detail": "Password aggiornata."})
