@@ -22,7 +22,8 @@
     "tailwind-merge": "^2.3.0",
     "lucide-react": "^0.395.0",
     "next-themes": "^0.3.0",
-    "sonner": "^1.5.0"
+    "sonner": "^1.5.0",
+    "zustand": "^5.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.0",

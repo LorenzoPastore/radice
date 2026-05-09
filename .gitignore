@@ -57,3 +57,5 @@ redis_data/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+.pnpm-store
